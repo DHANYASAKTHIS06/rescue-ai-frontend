@@ -1,15 +1,8 @@
 function Footer() {
-
   return (
-
-    <div className="footer">
-
-      <p>
-        AI Rescue System • Gesture Prediction • Flask + React
-      </p>
-
-    </div>
+    <footer className="footer">
+      <p>Rescue AI System </p>
+    </footer>
   )
 }
-
 export default Footer
