@@ -6,6 +6,127 @@ const BACKEND_URL       = import.meta.env.VITE_BACKEND_URL || 'https://rescue-fz
 const FRAME_INTERVAL_MS = 200
 const AUDIO_INTERVAL_MS = 4000
 
+// ── INTEGRATED COMPONENTS ────────────────────────────────────────────────────
+
+function AlertHistory({ history }) {
+  return (
+    <div className="history-card">
+      <h3>Alert History</h3>
+      {history.length === 0 ? (
+        <p className="no-history">No emergencies detected yet.</p>
+      ) : (
+        <ul className="history-list">
+          {history.map(item => (
+            <li key={item.id} className="history-item">
+              <span className="hi-icon">
+                {item.source === 'speech' ? '🎙️' : '🚨'}
+              </span>
+              <div className="hi-content">
+                <span className="hi-label">
+                  {item.source === 'speech'
+                    ? `Keyword: "${item.keyword}"`
+                    : item.label}
+                </span>
+                <span className="hi-source">
+                  {item.source === 'speech' ? 'Speech' : 'Gesture'}
+                </span>
+              </div>
+              <span className="hi-time">{item.time}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function InputCard({ formData, handleChange, predictGesture, loading }) {
+  return (
+    <div className="card input-card">
+      <h2>Sensor Input</h2>
+      <div className="grid">
+        <input type="number" name="ax" placeholder="AX" value={formData.ax} onChange={handleChange} />
+        <input type="number" name="ay" placeholder="AY" value={formData.ay} onChange={handleChange} />
+        <input type="number" name="az" placeholder="AZ" value={formData.az} onChange={handleChange} />
+        <input type="number" name="gx" placeholder="GX" value={formData.gx} onChange={handleChange} />
+        <input type="number" name="gy" placeholder="GY" value={formData.gy} onChange={handleChange} />
+        <input type="number" name="gz" placeholder="GZ" value={formData.gz} onChange={handleChange} />
+      </div>
+      <button onClick={predictGesture} disabled={loading}>
+        {loading ? 'Predicting...' : 'Predict Gesture'}
+      </button>
+    </div>
+  )
+}
+
+function PredictionCard({ prediction, error }) {
+  return (
+    <div className="card prediction-card">
+      <h2>Prediction Result</h2>
+      {error && <div className="error">{error}</div>}
+      {prediction && (
+        <div className="result-box">
+          <h1>{prediction.predicted_gesture}</h1>
+          <p>Encoded Value: {prediction.encoded_prediction}</p>
+        </div>
+      )}
+      {!prediction && !error && <p>Enter values and test your model.</p>}
+    </div>
+  )
+}
+
+function StatusBadge({ gesture, emergency, alertSource, predictedGesture, camStarted, micStarted }) {
+  const label =
+    !camStarted        ? '⏸ Camera not started' :
+    emergency && alertSource === 'speech'
+                       ? '⚠️ EMERGENCY — Keyword Detected' :
+    emergency          ? `⚠️ EMERGENCY — ${gesture}` :
+    gesture === 'IDLE' ? '✅ System Stable — No Gesture' :
+                         `🤚 Gesture: ${gesture}`
+
+  const cls = emergency ? 'status-badge emergency' : 'status-badge idle'
+
+  return (
+    <div className="status-card">
+      <h3>Detection Status</h3>
+      <div className={cls}>
+        <span className="status-dot" />
+        {label}
+      </div>
+      <div className="info-table">
+        <div className="info-row">
+          <span>Gesture Detection</span>
+          <strong>OpenCV Contour Tracking</strong>
+        </div>
+        <div className="info-row">
+          <span>Speech Detection</span>
+          <strong>Google Speech API</strong>
+        </div>
+        <div className="info-row">
+          <span>Gesture Model</span>
+          <strong>KNN Regressor</strong>
+        </div>
+        <div className="info-row">
+          <span>Raw Gesture</span>
+          <strong>{gesture}</strong>
+        </div>
+        <div className="info-row">
+          <span>Predicted Label</span>
+          <strong>{predictedGesture || '—'}</strong>
+        </div>
+        <div className="info-row">
+          <span>Microphone</span>
+          <strong style={{ color: micStarted ? '#86efac' : '#f87171' }}>
+            {micStarted ? 'Active' : 'Off'}
+          </strong>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── MAIN APP COMPONENT ────────────────────────────────────────────────────────
+
 function App() {
   const videoRef      = useRef(null)
   const canvasRef     = useRef(null)
@@ -16,6 +137,7 @@ function App() {
   const prevEmergency = useRef(false)
   const logEndRef     = useRef(null)
 
+  // System Core State
   const [camStarted,    setCamStarted]    = useState(false)
   const [micStarted,    setMicStarted]    = useState(false)
   const [processing,    setProcessing]    = useState(false)
@@ -30,13 +152,42 @@ function App() {
   const [triggerSource, setTriggerSource] = useState('SAFE')
   const [threatLevel,   setThreatLevel]   = useState('SAFE')
   const [confidence,    setConfidence]    = useState(0)
-  const [log,           setLog]           = useState([
-    { type: 'init',   text: 'RescueCode AI ready. Secure connection established.' },
+  
+  // Tabs & Lists State
+  const [alertHistory,  setAlertHistory]  = useState([])
+  const [activeTab,     setActiveTab]     = useState('diagnostics') // tabs: diagnostics | sensorTest | history
+
+  // Sensor IMU Testing Form State
+  const [sensorData, setSensorData] = useState({ ax: '', ay: '', az: '', gx: '', gy: '', gz: '' })
+  const [predictionResult, setPredictionResult] = useState(null)
+  const [sensorLoading, setSensorLoading] = useState(false)
+  const [sensorError, setSensorError] = useState(null)
+
+  const [log, setLog] = useState([
+    { type: 'init', text: 'RescueCode AI ready. Secure connection established.' },
   ])
 
   const addLog = useCallback((type, text) => {
     const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const newId = Date.now() + Math.random()
+
     setLog(prev => [...prev.slice(-49), { type, text, time }])
+
+    if (type === 'alert') {
+      const sourceFromLog = text.toLowerCase().includes('keyword') ? 'speech' : 'gesture'
+      const keywordExtracted = sourceFromLog === 'speech' ? text.match(/"([^"]+)"/)?.[1] || 'Distress' : ''
+      
+      setAlertHistory(prev => [
+        {
+          id: newId,
+          source: sourceFromLog,
+          label: sourceFromLog === 'gesture' ? text.replace('Emergency gesture detected: ', '') : '',
+          keyword: keywordExtracted,
+          time: time
+        },
+        ...prev
+      ])
+    }
   }, [])
 
   // scroll log to bottom
@@ -93,11 +244,10 @@ function App() {
   const startVoice = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      // merge with existing stream if needed
       const audioStream = stream
       streamRef.current = streamRef.current
         ? new MediaStream([
-            ...( streamRef.current.getVideoTracks()),
+            ...(streamRef.current.getVideoTracks()),
             ...audioStream.getAudioTracks()
           ])
         : audioStream
@@ -194,6 +344,38 @@ function App() {
     addLog('system', 'Alert acknowledged and reset.')
   }
 
+  // Sensor Form Handlers
+  const handleSensorChange = (e) => {
+    const { name, value } = e.target
+    setSensorData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const runSensorPrediction = async () => {
+    setSensorLoading(true)
+    setSensorError(null)
+    setPredictionResult(null)
+    try {
+      const res = await axios.post(`${BACKEND_URL}/predict`, {
+        ax: parseFloat(sensorData.ax || 0),
+        ay: parseFloat(sensorData.ay || 0),
+        az: parseFloat(sensorData.az || 0),
+        gx: parseFloat(sensorData.gx || 0),
+        gy: parseFloat(sensorData.gy || 0),
+        gz: parseFloat(sensorData.gz || 0),
+      })
+      if (res.data) {
+        setPredictionResult(res.data)
+        addLog('system', `Manual sensor testing output: ${res.data.predicted_gesture}`)
+      } else {
+        setSensorError('Invalid response configuration payload.')
+      }
+    } catch (err) {
+      setSensorError('Failed to retrieve inference engine results.')
+    } finally {
+      setSensorLoading(false)
+    }
+  }
+
   const threatColor = threatLevel === 'CRITICAL' ? 'var(--accent-red)'
     : threatLevel === 'WARNING' ? 'var(--accent-yellow)'
     : 'var(--accent-green)'
@@ -205,8 +387,6 @@ function App() {
 
   return (
     <div className={`app-shell${emergency ? ' app--emergency' : ''}`}>
-
-      {/* Rainbow top border */}
       <div className="rainbow-bar" />
 
       {/* Emergency overlay */}
@@ -243,7 +423,7 @@ function App() {
         <div className="header-divider" />
       </header>
 
-      {/* Main two-column grid */}
+      {/* Main UI layout section */}
       <main className="app-main">
 
         {/* LEFT — Live Input Feeds */}
@@ -253,7 +433,6 @@ function App() {
             <span className={`live-dot${camStarted ? ' live-dot--on' : ''}`} />
           </div>
 
-          {/* Video area */}
           <div className="video-box">
             <video ref={videoRef} style={{ display: 'none' }} playsInline muted />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
@@ -273,7 +452,6 @@ function App() {
             )}
           </div>
 
-          {/* Buttons */}
           <div className="btn-grid">
             <button className="btn btn--green" onClick={startCam} disabled={camStarted}>
               🖐 START CAM
@@ -289,7 +467,6 @@ function App() {
             </button>
           </div>
 
-          {/* Speech transcription */}
           <div className="speech-box">
             <div className="speech-box-title">🎙 SPEECH TRANSCRIPTION</div>
             <div className="speech-text">
@@ -298,69 +475,128 @@ function App() {
           </div>
         </section>
 
-        {/* RIGHT — Diagnostic Feed */}
+        {/* RIGHT — Controlled Panel Area using Tab Switchers */}
         <section className="panel right-panel">
-          <div className="panel-title-row">
-            <span className="panel-title">📊 Real-Time Diagnostic Feed</span>
+          
+          {/* Custom Navigation Tab Controls */}
+          <div className="tabs-header-nav" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button 
+              className={`btn ${activeTab === 'diagnostics' ? 'btn--blue' : 'btn--dark'}`}
+              onClick={() => setActiveTab('diagnostics')}
+            >
+              📊 Diagnostics
+            </button>
+            <button 
+              className={`btn ${activeTab === 'sensorTest' ? 'btn--blue' : 'btn--dark'}`}
+              onClick={() => setActiveTab('sensorTest')}
+            >
+              ⚙️ Sensor Tester
+            </button>
+            <button 
+              className={`btn ${activeTab === 'history' ? 'btn--blue' : 'btn--dark'}`}
+              onClick={() => setActiveTab('history')}
+            >
+              📜 Alert History ({alertHistory.length})
+            </button>
           </div>
 
-          {/* 4-grid stat cards */}
-          <div className="stat-grid">
-            <div className="stat-card">
-              <div className="stat-icon">🧠</div>
-              <div className="stat-content">
-                <div className="stat-label">SENTIMENT EMOTION</div>
-                <div className="stat-value stat-value--purple">{sentiment}</div>
+          {/* TAB CONTENT: Diagnostics View */}
+          {activeTab === 'diagnostics' && (
+            <>
+              <div className="panel-title-row">
+                <span className="panel-title">📊 Real-Time Diagnostic Feed</span>
               </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon" style={{ color: 'var(--accent-yellow)' }}>🖐</div>
-              <div className="stat-content">
-                <div className="stat-label">GESTURE STATE</div>
-                <div className="stat-value stat-value--yellow">{gesture}</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon" style={{ color: 'var(--accent-yellow)' }}>🏷</div>
-              <div className="stat-content">
-                <div className="stat-label">TRIGGER SOURCE</div>
-                <div className="stat-value stat-value--green">{triggerSource}</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon" style={{ color: threatColor }}>⚠</div>
-              <div className="stat-content">
-                <div className="stat-label">THREAT LEVEL</div>
-                <div className="stat-value" style={{ color: threatColor }}>{threatLevel}</div>
-              </div>
-            </div>
-          </div>
 
-          {/* Status rows */}
-          <div className="status-rows">
-            <div className="status-row">
-              <span className="status-row-label">🎤 Voice Status:</span>
-              <span className="status-row-val">{voiceStatusText}</span>
+              <div className="stat-grid">
+                <div className="stat-card">
+                  <div className="stat-icon">🧠</div>
+                  <div className="stat-content">
+                    <div className="stat-label">SENTIMENT EMOTION</div>
+                    <div className="stat-value stat-value--purple">{sentiment}</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ color: 'var(--accent-yellow)' }}>🖐</div>
+                  <div className="stat-content">
+                    <div className="stat-label">GESTURE STATE</div>
+                    <div className="stat-value stat-value--yellow">{gesture}</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ color: 'var(--accent-yellow)' }}>🏷</div>
+                  <div className="stat-content">
+                    <div className="stat-label">TRIGGER SOURCE</div>
+                    <div className="stat-value stat-value--green">{triggerSource}</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ color: threatColor }}>⚠</div>
+                  <div className="stat-content">
+                    <div className="stat-label">THREAT LEVEL</div>
+                    <div className="stat-value" style={{ color: threatColor }}>{threatLevel}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="status-rows">
+                <div className="status-row">
+                  <span className="status-row-label">🎤 Voice Status:</span>
+                  <span className="status-row-val">{voiceStatusText}</span>
+                </div>
+                <div className="status-row">
+                  <span className="status-row-label">🖐 Gesture Status:</span>
+                  <span className="status-row-val">{gestureStatusText}</span>
+                </div>
+                <div className="status-row">
+                  <span className="status-row-label">🚨 Emergency Status:</span>
+                  <span className="status-row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="status-dot-small" style={{ background: emergencyDotColor }} />
+                    {emergencyStatusText}
+                  </span>
+                </div>
+                <div className="status-row">
+                  <span className="status-row-label">🔴 Live Detection Confidence</span>
+                  <span className="status-row-val">{confidence}%</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* TAB CONTENT: Interactive KNN Sensor Modeling Forms */}
+          {activeTab === 'sensorTest' && (
+            <div className="sensor-tab-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <InputCard 
+                formData={sensorData} 
+                handleChange={handleSensorChange} 
+                predictGesture={runSensorPrediction} 
+                loading={sensorLoading} 
+              />
+              <PredictionCard 
+                prediction={predictionResult} 
+                error={sensorError} 
+              />
             </div>
-            <div className="status-row">
-              <span className="status-row-label">🖐 Gesture Status:</span>
-              <span className="status-row-val">{gestureStatusText}</span>
-            </div>
-            <div className="status-row">
-              <span className="status-row-label">🚨 Emergency Status:</span>
-              <span className="status-row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="status-dot-small" style={{ background: emergencyDotColor }} />
-                {emergencyStatusText}
-              </span>
-            </div>
-            <div className="status-row">
-              <span className="status-row-label">🔴 Live Detection Confidence</span>
-              <span className="status-row-val">{confidence}%</span>
-            </div>
+          )}
+
+          {/* TAB CONTENT: Historical Log Data Record Sets */}
+          {activeTab === 'history' && (
+            <AlertHistory history={alertHistory} />
+          )}
+
+          {/* Integrated Core Components rendered below tab contents */}
+          <div style={{ marginTop: '20px', borderTop: '1px solid #333', paddingTop: '20px' }}>
+            <StatusBadge 
+              gesture={gesture} 
+              emergency={emergency} 
+              alertSource={alertSource} 
+              predictedGesture={predictionResult?.predicted_gesture} 
+              camStarted={camStarted} 
+              micStarted={micStarted} 
+            />
           </div>
 
           {/* Activity log */}
-          <div className="log-box">
+          <div className="log-box" style={{ marginTop: '20px' }}>
             <div className="log-title">📋 CHRONOLOGICAL ACTIVITY LOG</div>
             <div className="log-entries">
               {log.map((entry, i) => (
