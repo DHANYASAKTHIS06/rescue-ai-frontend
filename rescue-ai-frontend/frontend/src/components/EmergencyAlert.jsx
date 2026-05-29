@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-function EmergencyAlert({ gesture, onDismiss }) {
+function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
@@ -8,25 +8,33 @@ function EmergencyAlert({ gesture, onDismiss }) {
     return () => clearInterval(t)
   }, [])
 
-  const directionLabel =
-    gesture === 'WAVE_LEFT'  ? '← Left Wave Detected'  :
-    gesture === 'WAVE_RIGHT' ? '→ Right Wave Detected' :
-    gesture
+  const isSpeech = source === 'speech'
+
+  const title = isSpeech ? 'HIDDEN KEYWORD DETECTED' : 'EMERGENCY DETECTED'
+
+  const icon = isSpeech ? '🎙️' : '🚨'
+
+  const detailLabel = isSpeech
+    ? `"${keyword}"`
+    : gesture === 'WAVE_LEFT'  ? '← Left Wave Detected'
+    : gesture === 'WAVE_RIGHT' ? '→ Right Wave Detected'
+    : gesture
+
+  const desc = isSpeech
+    ? 'A hidden distress keyword was detected in speech. Please verify the situation immediately.'
+    : 'An SOS hand wave was detected by the Rescue AI system. Please verify the situation immediately.'
 
   return (
     <div className="overlay" onClick={onDismiss}>
       <div className="alert-box" onClick={e => e.stopPropagation()}>
 
-        <div className="alert-icon">🚨</div>
+        <div className="alert-icon">{icon}</div>
 
-        <h1 className="alert-title">EMERGENCY DETECTED</h1>
+        <h1 className="alert-title">{title}</h1>
 
-        <div className="alert-gesture">{directionLabel}</div>
+        <div className="alert-gesture">{detailLabel}</div>
 
-        <p className="alert-desc">
-          An SOS hand wave was detected by the Rescue AI system.
-          Please verify the situation immediately.
-        </p>
+        <p className="alert-desc">{desc}</p>
 
         <div className="alert-elapsed">
           Alert active for <strong>{elapsed}s</strong>
