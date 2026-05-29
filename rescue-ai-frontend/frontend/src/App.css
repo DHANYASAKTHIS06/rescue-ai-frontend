@@ -1,35 +1,64 @@
-/* Layout & Grid Architecture */
-.main-content.grid-container {
+/* Shell Base */
+.app-shell {
+  min-height: 100vh;
+  background: var(--bg-deep);
+  padding: 0 0 40px;
+  position: relative;
+}
+
+.app--emergency {
+  background: #0d0505;
+}
+
+/* Color Stripe */
+.rainbow-bar {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    #ef4444, #f97316, #eab308, #22c55e,
+    #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444
+  );
+  background-size: 200% 100%;
+  animation: rainbow-move 4s linear infinite;
+}
+
+@keyframes rainbow-move {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* Layout Structural Control Grid */
+.dashboard-grid {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
+  grid-template-columns: 1.4fr 1fr;
   gap: 24px;
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 24px 40px;
+  padding: 24px;
 }
 
-@media (max-width: 968px) {
-  .main-content.grid-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-.side-panel {
+.dashboard-sidebar {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* Base Card Styling (Dashboard Blocks) */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+}
+
+/* Card Interfaces Styling */
 .camera-card, .status-card, .speech-card, .history-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 24px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-/* Header Text elements in Cards */
 .camera-card h2, .status-card h3, .speech-card h2, .history-card h3 {
   font-family: var(--font-head);
   font-size: 20px;
@@ -42,21 +71,21 @@
   padding-bottom: 10px;
 }
 
-/* Live Camera Feed Panel Styling */
+/* Streaming Layout Wrappers */
 .cam-start-box {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px dashed var(--border);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
 }
 
 .cam-icon {
-  font-size: 40px;
+  font-size: 44px;
   margin-bottom: 16px;
 }
 
@@ -71,15 +100,15 @@
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
   color: #fff;
   border: none;
-  padding: 14px 28px;
+  padding: 14px 32px;
   font-family: var(--font-head);
   font-weight: 700;
   font-size: 16px;
   letter-spacing: 1px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   text-transform: uppercase;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
 }
 
 .start-btn:hover {
@@ -90,7 +119,7 @@
 .feed-wrapper {
   position: relative;
   background: #000;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -99,12 +128,13 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(15, 22, 40, 0.8);
+  background: rgba(10, 14, 26, 0.85);
+  border: 1px solid var(--border);
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 12px;
-  z-index: 2;
+  z-index: 10;
 }
 
 .feed-img {
@@ -119,15 +149,18 @@
   font-size: 12px;
   color: var(--accent-cyan);
   text-align: center;
+  background: rgba(6, 182, 212, 0.05);
+  padding: 8px;
+  border-radius: 6px;
 }
 
-/* Status Indicator Pill Badges */
+/* Diagnostic Badges & Metrics Rows */
 .status-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 8px;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: bold;
@@ -135,13 +168,13 @@
 }
 
 .status-badge.idle {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid var(--accent-green);
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
   color: #86efac;
 }
 
 .status-badge.emergency {
-  background: rgba(239, 68, 110, 0.1);
+  background: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--accent-red);
   color: #fca5a5;
   animation: pulse-border 2s infinite;
@@ -154,7 +187,6 @@
   background: currentColor;
 }
 
-/* Modular Diagnostic Data Grid Rows */
 .info-table {
   display: flex;
   flex-direction: column;
@@ -166,20 +198,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
   font-size: 14px;
 }
 
-.info-row span {
-  color: var(--text-muted);
-}
+.info-row span { color: var(--text-muted); }
+.info-row strong { font-family: var(--font-mono); color: var(--text-primary); }
 
-.info-row strong {
-  font-family: var(--font-mono);
-  color: var(--text-primary);
-}
-
-/* Speech Recognition Content Panels */
+/* Audio / Speech Tracking Elements */
 .mic-status {
   display: flex;
   align-items: center;
@@ -191,18 +217,25 @@
 }
 
 .mic-on .mic-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background: var(--accent-green);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--accent-green);
+  box-shadow: 0 0 10px var(--accent-green);
+}
+
+.mic-off .mic-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-red);
+  border-radius: 50%;
 }
 
 .transcript-box {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: 6px;
+  padding: 16px;
   margin-bottom: 12px;
 }
 
@@ -211,39 +244,43 @@
   text-transform: uppercase;
   color: var(--text-muted);
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .transcript-text {
   font-family: var(--font-mono);
   color: var(--accent-yellow);
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .keywords-hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent-blue);
 }
 
-/* Chronological Incident Feed List */
+/* History Feed Logs */
 .history-list {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 220px;
+  max-height: 240px;
   overflow-y: auto;
 }
 
 .history-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   background: var(--bg-card2);
   border: 1px solid var(--border);
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 12px;
+  border-radius: 6px;
 }
 
 .hi-content {
@@ -253,36 +290,17 @@
   gap: 2px;
 }
 
-.hi-label {
-  font-size: 13px;
-  font-family: var(--font-mono);
-  font-weight: bold;
-}
+.hi-label { font-size: 13px; font-family: var(--font-mono); font-weight: bold; color: var(--text-primary); }
+.hi-source { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+.hi-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.no-history { font-size: 13px; color: var(--text-muted); text-align: center; padding: 24px 0; }
 
-.hi-source {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.hi-time {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.no-history {
-  font-size: 13px;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 20px 0;
-}
-
-/* Global Crisis Alert Intercept Popups */
+/* Crisis Alert Popups Overlays */
 .overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(5, 5, 10, 0.85);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,74 +308,21 @@
 }
 
 .alert-box {
-  background: #110707;
+  background: #120606;
   border: 2px solid var(--accent-red);
-  box-shadow: 0 0 50px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.3);
   width: 90%;
-  max-width: 480px;
-  border-radius: 16px;
+  max-width: 460px;
+  border-radius: 12px;
   padding: 32px;
   text-align: center;
 }
 
-.alert-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-  animation: flash-scale 1s infinite alternate;
-}
+.alert-icon { font-size: 52px; margin-bottom: 12px; animation: flash-scale 1s infinite alternate; }
+.alert-title { font-family: var(--font-head); font-size: 24px; color: var(--accent-red); margin-bottom: 8px; }
+.alert-gesture { font-family: var(--font-mono); font-size: 18px; color: #fff; background: rgba(239, 68, 68, 0.2); display: inline-block; padding: 4px 16px; border-radius: 4px; margin-bottom: 16px; }
+.alert-desc { color: #fca5a5; font-size: 14px; line-height: 1.5; margin-bottom: 24px; }
+.alert-dismiss { background: var(--accent-red); color: #fff; border: none; border-radius: 4px; padding: 12px 28px; font-family: var(--font-head); font-size: 14px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
 
-.alert-title {
-  font-family: var(--font-head);
-  font-size: 24px;
-  color: var(--accent-red);
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-}
-
-.alert-gesture {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  color: #fff;
-  background: rgba(239, 68, 68, 0.2);
-  display: inline-block;
-  padding: 4px 16px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-}
-
-.alert-desc {
-  font-size: 14px;
-  color: #fca5a5;
-  line-height: 1.5;
-  margin-bottom: 20px;
-}
-
-.alert-elapsed {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 24px;
-}
-
-.alert-dismiss {
-  background: var(--accent-red);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 24px;
-  font-family: var(--font-head);
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-/* Animations */
-@keyframes pulse-border {
-  0%, 100% { border-color: var(--accent-red); }
-  50% { border-color: transparent; }
-}
-
-@keyframes flash-scale {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.15); }
-}
+@keyframes pulse-border { 0%, 100% { border-color: var(--accent-red); } 50% { border-color: transparent; } }
+@keyframes flash-scale { 0% { transform: scale(1); } 100% { transform: scale(1.12); } }
