@@ -3,15 +3,23 @@ import { useEffect, useState } from 'react'
 function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
   const [elapsed, setElapsed] = useState(0)
 
+  // 1. Tracks running counter seconds
   useEffect(() => {
     const t = setInterval(() => setElapsed(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
 
+  // 2. Automatically forces system shutdown/dismissal after 4 seconds
+  useEffect(() => {
+    const autoCloseTimer = setTimeout(() => {
+      onDismiss()
+    }, 4000) // 4000 milliseconds = 4 seconds
+
+    return () => clearTimeout(autoCloseTimer)
+  }, [onDismiss])
+
   const isSpeech = source === 'speech'
-
   const title = isSpeech ? 'HIDDEN KEYWORD DETECTED' : 'EMERGENCY DETECTED'
-
   const icon = isSpeech ? '🎙️' : '🚨'
 
   const detailLabel = isSpeech
@@ -37,14 +45,12 @@ function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
         <p className="alert-desc">{desc}</p>
 
         <div className="alert-elapsed">
-          Alert active for <strong>{elapsed}s</strong>
+          Alert active for <strong>{elapsed}s</strong> (Auto-dismissing shortly...)
         </div>
 
-        <button className="dismiss-btn" onClick={onDismiss}>
-          ✓ Acknowledge &amp; Dismiss
+        <button className="alert-dismiss" onClick={onDismiss}>
+          Dismiss Alert
         </button>
-
-        <p className="dismiss-hint">or click anywhere outside to dismiss</p>
       </div>
     </div>
   )
