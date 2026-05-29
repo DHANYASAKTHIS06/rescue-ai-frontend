@@ -1,9 +1,12 @@
-function StatusBadge({ gesture, emergency, predictedGesture, camStarted }) {
+function StatusBadge({ gesture, emergency, alertSource, predictedGesture, camStarted, micStarted }) {
+
   const label =
-    !camStarted    ? '⏸ Camera not started' :
-    emergency      ? `⚠️ EMERGENCY — ${gesture}` :
+    !camStarted        ? '⏸ Camera not started' :
+    emergency && alertSource === 'speech'
+                       ? '⚠️ EMERGENCY — Keyword Detected' :
+    emergency          ? `⚠️ EMERGENCY — ${gesture}` :
     gesture === 'IDLE' ? '✅ System Stable — No Gesture' :
-                     `🤚 Gesture: ${gesture}`
+                         `🤚 Gesture: ${gesture}`
 
   const cls = emergency ? 'status-badge emergency' : 'status-badge idle'
 
@@ -18,8 +21,12 @@ function StatusBadge({ gesture, emergency, predictedGesture, camStarted }) {
 
       <div className="info-table">
         <div className="info-row">
-          <span>Detection Method</span>
-          <strong>Browser Webcam → MediaPipe</strong>
+          <span>Gesture Detection</span>
+          <strong>OpenCV Contour Tracking</strong>
+        </div>
+        <div className="info-row">
+          <span>Speech Detection</span>
+          <strong>Google Speech API</strong>
         </div>
         <div className="info-row">
           <span>Gesture Model</span>
@@ -32,6 +39,12 @@ function StatusBadge({ gesture, emergency, predictedGesture, camStarted }) {
         <div className="info-row">
           <span>Predicted Label</span>
           <strong>{predictedGesture || '—'}</strong>
+        </div>
+        <div className="info-row">
+          <span>Microphone</span>
+          <strong style={{ color: micStarted ? '#86efac' : '#f87171' }}>
+            {micStarted ? 'Active' : 'Off'}
+          </strong>
         </div>
       </div>
     </div>
