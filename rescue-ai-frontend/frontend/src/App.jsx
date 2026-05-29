@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import axios from 'axios'
 import './App.css'
 
-// Import all your modular components from the components folder
+// Import components
 import Header from './components/Header'
 import CameraFeed from './components/CameraFeed'
 import StatusBadge from './components/StatusBadge'
@@ -36,7 +36,7 @@ function App() {
   const [camError,      setCamError]      = useState(null)
   const [history,       setHistory]       = useState([])
 
-  // Helper function to track triggered alerts in the history feed
+  // Logs incidents into the History list module sequentially
   const addHistoryItem = useCallback((source, label, keyword = '') => {
     const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
     const newItem = {
@@ -49,14 +49,14 @@ function App() {
     setHistory(prev => [newItem, ...prev])
   }, [])
 
-  // Verify connection with Flask backend on initialization
+  // Confirm connection with backend
   useEffect(() => {
     axios.get(`${BACKEND_URL}/`).catch(() => {
-      console.warn('Backend connection failed. Check your BACKEND_URL.')
+      console.warn('Backend connection unavailable.')
     })
   }, [])
 
-  // Trigger emergency state
+  // Intercept trigger parameters
   const triggerEmergency = useCallback((source, label, keyword = '') => {
     setEmergency(true)
     setAlertSource(source)
@@ -64,7 +64,7 @@ function App() {
     addHistoryItem(source, label, keyword)
   }, [addHistoryItem])
 
-  // Handles starting hardware inputs (Camera and Microphone combined)
+  // Fire device access permissions synchronously
   const startCamAndMic = useCallback(async () => {
     setCamError(null)
     try {
@@ -83,12 +83,12 @@ function App() {
       setCamStarted(true)
       setMicStarted(true)
     } catch (err) {
-      setCamError('Camera/Microphone access denied. Please grant both permissions.')
+      setCamError('Camera/Microphone access denied.')
       console.error(err)
     }
   }, [])
 
-  // Captures and transmits canvas frames to the backend handler loop
+  // Process frames
   const sendFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || processing) return
     const video = videoRef.current
@@ -122,7 +122,7 @@ function App() {
     }
   }, [processing, triggerEmergency])
 
-  // Captures and transmits audio buffers sequentially for keyword monitoring
+  // Handle audio processing loops
   const recordAndSendAudio = useCallback(() => {
     if (!streamRef.current) return
     const audioTracks = streamRef.current.getAudioTracks()
@@ -158,7 +158,7 @@ function App() {
     }, 3000)
   }, [triggerEmergency])
 
-  // Periodic visual background tracking runner
+  // Timing triggers
   useEffect(() => {
     if (camStarted) {
       frameTimer.current = setInterval(sendFrame, FRAME_INTERVAL_MS)
@@ -166,7 +166,6 @@ function App() {
     return () => clearInterval(frameTimer.current)
   }, [camStarted, sendFrame])
 
-  // Periodic audio monitoring background tracking runner
   useEffect(() => {
     if (micStarted) {
       audioTimer.current = setInterval(recordAndSendAudio, AUDIO_INTERVAL_MS)
@@ -183,11 +182,12 @@ function App() {
   return (
     <div className={`app-shell ${emergency ? 'app--emergency' : ''}`}>
       <div className="rainbow-bar" />
-      
       <Header />
 
-      <main className="main-content grid-container">
-        {/* Left Hand Column: Media Streaming Feeds */}
+      {/* Main Structural Layout Grid Wrapper */}
+      <main className="dashboard-grid">
+        
+        {/* Left Hand Column: Live Video Camera Box */}
         <CameraFeed 
           videoRef={videoRef}
           canvasRef={canvasRef}
@@ -198,8 +198,8 @@ function App() {
           processing={processing}
         />
 
-        {/* Right Hand Column: Status Badge, Speech Detection, and History Logs */}
-        <div className="side-panel">
+        {/* Right Hand Column Component Stack */}
+        <div className="dashboard-sidebar">
           <StatusBadge 
             gesture={gesture}
             emergency={emergency}
@@ -209,6 +209,7 @@ function App() {
             micStarted={micStarted}
           />
 
+          {/* Fully Mounted Speech Data Monitoring Card */}
           <SpeechPanel 
             micStarted={micStarted}
             transcript={transcript}
