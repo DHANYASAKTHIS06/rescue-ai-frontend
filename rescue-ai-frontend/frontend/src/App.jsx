@@ -13,15 +13,13 @@ import Footer from './components/Footer'
 
 const BACKEND_URL       = import.meta.env.VITE_BACKEND_URL || 'https://rescue-fzfn.onrender.com'
 const FRAME_INTERVAL_MS = 200
-const AUDIO_INTERVAL_MS = 4000
 
 function App() {
   const videoRef      = useRef(null)
   const canvasRef     = useRef(null)
   const frameTimer    = useRef(null)
-  const audioTimer    = useRef(null)
   const streamRef     = useRef(null)
-  const audioChunks   = useRef([])
+  const mediaRecorderRef = useRef(null)
   const prevEmergency = useRef(false)
 
   const [camStarted,    setCamStarted]    = useState(false)
@@ -64,7 +62,7 @@ function App() {
     addHistoryItem(source, label, keyword)
   }, [addHistoryItem])
 
-  // Fire device access permissions synchronously
+  // Fire device access permissions synchronously and launch Native Speech Processor
   const startCamAndMic = useCallback(async () => {
     setCamError(null)
     try {
@@ -82,13 +80,61 @@ function App() {
       
       setCamStarted(true)
       setMicStarted(true)
+      
+      // Start processing live speech patterns
+      startSpeechRecognition()
+
     } catch (err) {
       setCamError('Camera/Microphone access denied.')
       console.error(err)
     }
   }, [])
 
-  // Process frames
+  // Robust Native Web Speech Core Architecture Integration
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      console.error("Web Speech API is completely missing from this browser ecosystem.")
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = 'en-US'
+
+    recognition.onresult = async (event) => {
+      const latestTranscript = event.results[event.results.length - 1][0].transcript.trim()
+      setTranscript(latestTranscript)
+
+      try {
+        // Send transcript payload to Python backend for emergency checking
+        const res = await axios.post(`${BACKEND_URL}/process-audio`, { text: latestTranscript })
+        const d = res.data
+        if (d.success && d.emergency) {
+          triggerEmergency('speech', 'KEYWORD', d.keyword || latestTranscript)
+        }
+      } catch (err) {
+        console.error("Backend text validation error:", err)
+      }
+    }
+
+    recognition.onerror = (e) => {
+      console.warn("Speech recognition state fault:", e.error)
+      if (e.error === 'not-allowed') setMicStarted(false)
+    }
+
+    recognition.onend = () => {
+      // Automatically keep listening alive continuously
+      if (streamRef.current && streamRef.current.getAudioTracks()[0].enabled) {
+        recognition.start()
+      }
+    }
+
+    recognition.start()
+  }
+
+  // Process video frame arrays
   const sendFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || processing) return
     const video = videoRef.current
@@ -122,56 +168,13 @@ function App() {
     }
   }, [processing, triggerEmergency])
 
-  // Handle audio processing loops
-  const recordAndSendAudio = useCallback(() => {
-    if (!streamRef.current) return
-    const audioTracks = streamRef.current.getAudioTracks()
-    if (!audioTracks.length) return
-    
-    const audioStream = new MediaStream(audioTracks)
-    const recorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' })
-    audioChunks.current = []
-    
-    recorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.current.push(e.data) }
-    
-    recorder.onstop = async () => {
-      const blob = new Blob(audioChunks.current, { type: 'audio/webm' })
-      const buffer = await blob.arrayBuffer()
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      try {
-        const res = await axios.post(`${BACKEND_URL}/process-audio`, { audio: b64 })
-        const d = res.data
-        if (d.success && d.transcript) {
-          setTranscript(d.transcript)
-          if (d.emergency && d.keyword) {
-            triggerEmergency('speech', 'KEYWORD', d.keyword)
-          }
-        }
-      } catch (err) {
-        console.error('Audio processing error', err)
-      }
-    }
-    
-    recorder.start()
-    setTimeout(() => {
-      if (recorder.state !== 'inactive') recorder.stop()
-    }, 3000)
-  }, [triggerEmergency])
-
-  // Timing triggers
+  // Timing triggers for Frame loops
   useEffect(() => {
     if (camStarted) {
       frameTimer.current = setInterval(sendFrame, FRAME_INTERVAL_MS)
     }
     return () => clearInterval(frameTimer.current)
   }, [camStarted, sendFrame])
-
-  useEffect(() => {
-    if (micStarted) {
-      audioTimer.current = setInterval(recordAndSendAudio, AUDIO_INTERVAL_MS)
-    }
-    return () => clearInterval(audioTimer.current)
-  }, [micStarted, recordAndSendAudio])
 
   const dismissAlert = () => {
     setEmergency(false)
@@ -184,10 +187,7 @@ function App() {
       <div className="rainbow-bar" />
       <Header />
 
-      {/* Main Structural Layout Grid Wrapper */}
       <main className="dashboard-grid">
-        
-        {/* Left Hand Column: Live Video Camera Box */}
         <CameraFeed 
           videoRef={videoRef}
           canvasRef={canvasRef}
@@ -198,7 +198,6 @@ function App() {
           processing={processing}
         />
 
-        {/* Right Hand Column Component Stack */}
         <div className="dashboard-sidebar">
           <StatusBadge 
             gesture={gesture}
@@ -209,7 +208,6 @@ function App() {
             micStarted={micStarted}
           />
 
-          {/* Fully Mounted Speech Data Monitoring Card */}
           <SpeechPanel 
             micStarted={micStarted}
             transcript={transcript}
