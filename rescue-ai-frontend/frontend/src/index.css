@@ -3,32 +3,38 @@
 }
 
 :root {
-  --bg-deep:    #0a0e1a;
-  --bg-card:    #0f1628;
-  --bg-card2:   #131929;
-  --border:     rgba(255,255,255,0.07);
-  --accent-green:  #22c55e;
+  --bg-deep:       #060810;
+  --bg-shell:      #0b0f19;
+  --bg-card:       #0f1524;
+  --bg-card-hover: #131a2d;
+  --border:        rgba(255, 255, 255, 0.06);
+  --accent-green:  #10b981;
   --accent-blue:   #3b82f6;
   --accent-red:    #ef4444;
-  --accent-yellow: #eab308;
-  --accent-purple: #a855f7;
+  --accent-yellow: #f59e0b;
+  --accent-purple: #8b5cf6;
   --accent-cyan:   #06b6d4;
-  --text-primary:  #f0f4ff;
-  --text-muted:    #64748b;
-  --text-dim:      #334155;
-  --font-main: 'Exo 2', sans-serif;
-  --font-mono: 'Share Tech Mono', monospace;
-  --font-head: 'Rajdhani', sans-serif;
+  --text-primary:  #f3f4f6;
+  --text-muted:    #9ca3af;
+  --text-dim:      #4b5563;
+  --font-main:     'Outfit', 'Inter', sans-serif;
+  --font-mono:     'Share Tech Mono', monospace;
+  --font-head:     'Rajdhani', sans-serif;
 }
 
 body {
-  background: var(--bg-deep);
+  background: radial-gradient(circle at 50% 50%, #151e33 0%, #070a12 100%);
   color: var(--text-primary);
   font-family: var(--font-main);
   min-height: 100vh;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 20px;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; border: 2px solid var(--bg-deep); }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
