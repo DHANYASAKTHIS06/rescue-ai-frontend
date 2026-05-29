@@ -26,12 +26,14 @@ body {
   background: radial-gradient(circle at 50% 50%, #151e33 0%, #070a12 100%);
   color: var(--text-primary);
   font-family: var(--font-main);
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 40px 20px;
+  align-items: center;
+  padding: 10px;
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
