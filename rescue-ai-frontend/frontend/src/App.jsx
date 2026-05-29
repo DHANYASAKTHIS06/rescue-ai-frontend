@@ -6,7 +6,7 @@ import './App.css'
 import Header from './components/Header'
 import CameraFeed from './components/CameraFeed'
 import StatusBadge from './components/StatusBadge'
-import SpeechPanel from './components/SpeechPanel' // <-- Added SpeechPanel Import
+import SpeechPanel from './components/SpeechPanel'
 import EmergencyAlert from './components/EmergencyAlert'
 import AlertHistory from './components/AlertHistory'
 import Footer from './components/Footer'
@@ -181,7 +181,9 @@ function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className={`app-shell ${emergency ? 'app--emergency' : ''}`}>
+      <div className="rainbow-bar" />
+      
       <Header />
 
       <main className="main-content grid-container">
@@ -196,7 +198,7 @@ function App() {
           processing={processing}
         />
 
-        {/* Right Hand Column: Diagnostic Monitors, Speech Listeners & Alert logs */}
+        {/* Right Hand Column: Status Badge, Speech Detection, and History Logs */}
         <div className="side-panel">
           <StatusBadge 
             gesture={gesture}
@@ -207,7 +209,6 @@ function App() {
             micStarted={micStarted}
           />
 
-          {/* Added SpeechPanel component below StatusBadge */}
           <SpeechPanel 
             micStarted={micStarted}
             transcript={transcript}
@@ -217,7 +218,6 @@ function App() {
         </div>
       </main>
 
-      {/* Global Context-Aware Safety Intercept Layer */}
       {emergency && (
         <EmergencyAlert 
           source={alertSource}
