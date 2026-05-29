@@ -26,8 +26,9 @@ body {
   color: var(--text-primary);
   font-family: var(--font-main);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
