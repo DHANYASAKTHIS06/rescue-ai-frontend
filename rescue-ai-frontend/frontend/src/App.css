@@ -809,3 +809,106 @@
   0% { transform: scale(0.95); filter: drop-shadow(0 0 2px rgba(239,68,68,0.2)); }
   100% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(239,68,68,0.8)); }
 }
+
+/* Calculator Gate Styling */
+.calculator-gate-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.calculator-card {
+  width: 320px;
+  background: rgba(15, 21, 36, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+}
+
+.calc-screen {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  min-height: 86px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.calc-equation {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.calc-display {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  color: #ffffff;
+  margin-top: 4px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.calc-btn {
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  border-radius: 14px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.calc-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.calc-btn:active {
+  transform: translateY(1px);
+}
+
+.calc-btn.action {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+}
+
+.calc-btn.action:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.calc-btn.operator {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+.calc-btn.operator:hover {
+  background: linear-gradient(135deg, #ea580c, #dd6b20);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+}
+
+.calc-btn.double {
+  grid-column: span 2;
+}
