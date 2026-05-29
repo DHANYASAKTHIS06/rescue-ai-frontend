@@ -10,6 +10,7 @@ import SpeechPanel from './components/SpeechPanel'
 import EmergencyAlert from './components/EmergencyAlert'
 import AlertHistory from './components/AlertHistory'
 import Footer from './components/Footer'
+import CalculatorGate from './components/CalculatorGate'
 
 const BACKEND_URL       = import.meta.env.VITE_BACKEND_URL || 'https://rescue-fzfn.onrender.com'
 const FRAME_INTERVAL_MS = 200
@@ -22,6 +23,7 @@ function App() {
   const mediaRecorderRef = useRef(null)
   const prevEmergency = useRef(false)
 
+  const [unlocked,      setUnlocked]      = useState(false)
   const [camStarted,    setCamStarted]    = useState(false)
   const [micStarted,    setMicStarted]    = useState(false)
   const [processing,    setProcessing]    = useState(false)
@@ -49,10 +51,12 @@ function App() {
 
   // Confirm connection with backend
   useEffect(() => {
-    axios.get(`${BACKEND_URL}/`).catch(() => {
-      console.warn('Backend connection unavailable.')
-    })
-  }, [])
+    if (unlocked) {
+      axios.get(`${BACKEND_URL}/`).catch(() => {
+        console.warn('Backend connection unavailable.')
+      })
+    }
+  }, [unlocked])
 
   // Intercept trigger parameters
   const triggerEmergency = useCallback((source, label, keyword = '') => {
@@ -170,16 +174,20 @@ function App() {
 
   // Timing triggers for Frame loops
   useEffect(() => {
-    if (camStarted) {
+    if (camStarted && unlocked) {
       frameTimer.current = setInterval(sendFrame, FRAME_INTERVAL_MS)
     }
     return () => clearInterval(frameTimer.current)
-  }, [camStarted, sendFrame])
+  }, [camStarted, sendFrame, unlocked])
 
   const dismissAlert = () => {
     setEmergency(false)
     setAlertSource('')
     setAlertKeyword('')
+  }
+
+  if (!unlocked) {
+    return <CalculatorGate onUnlock={() => setUnlocked(true)} />
   }
 
   return (
