@@ -9,15 +9,6 @@ function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
     return () => clearInterval(t)
   }, [])
 
-  // 2. Automatically forces system shutdown/dismissal after 4 seconds
-  useEffect(() => {
-    const autoCloseTimer = setTimeout(() => {
-      onDismiss()
-    }, 10000) // 4000 milliseconds = 4 seconds
-
-    return () => clearTimeout(autoCloseTimer)
-  }, [onDismiss])
-
   const isSpeech = source === 'speech'
   const title = isSpeech ? 'HIDDEN KEYWORD DETECTED' : 'EMERGENCY DETECTED'
   const icon = isSpeech ? '🎙️' : '🚨'
@@ -45,7 +36,7 @@ function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
         <p className="alert-desc">{desc}</p>
 
         <div className="alert-elapsed">
-          Alert active for <strong>{elapsed}s</strong> (Auto-dismissing shortly...)
+          Alert active for <strong>{elapsed}s</strong>
         </div>
 
         <button className="alert-dismiss" onClick={onDismiss}>
