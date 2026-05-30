@@ -13,7 +13,7 @@ function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
   useEffect(() => {
     const autoCloseTimer = setTimeout(() => {
       onDismiss()
-    }, 8000) // 4000 milliseconds = 4 seconds
+    }, 10000) // 4000 milliseconds = 4 seconds
 
     return () => clearTimeout(autoCloseTimer)
   }, [onDismiss])
