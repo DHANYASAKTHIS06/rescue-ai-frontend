@@ -39,7 +39,7 @@ function EmergencyAlert({ source, gesture, keyword, onDismiss }) {
           Alert active for <strong>{elapsed}s</strong>
         </div>
 
-        <button className="alert-dismiss">
+        <button className="alert-dismiss" onClick={onDismiss}>
           Dismiss Alert
         </button>
       </div>
